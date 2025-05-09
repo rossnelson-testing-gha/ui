@@ -2,6 +2,7 @@
 	export let title = "";
 	export let content = "";
 	export let image = "";
+	export let funFact = "This is a fun card!";
 </script>
 
 <div class="card">
@@ -11,6 +12,7 @@
 	<div class="card-content">
 		<h2 class="card-title">{title}</h2>
 		<p class="card-text">{content}</p>
+		<p class="card-fun">{funFact}</p>
 	</div>
 </div>
 
@@ -36,5 +38,10 @@
 	.card-text {
 		margin: 0;
 		color: #555;
+	}
+	.card-fun {
+		margin-top: 8px;
+		font-style: italic;
+		color: #888;
 	}
 </style>
