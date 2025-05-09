@@ -2,7 +2,7 @@
 	export let title = "";
 	export let content = "";
 	export let image = "";
-	export let funFact = "This is a fun card!";
+	export let funFact = "This is a really fun card!";
 </script>
 
 <div class="card">
