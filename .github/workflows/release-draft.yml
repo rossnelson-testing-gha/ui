@@ -40,5 +40,5 @@ jobs:
           event-type: sync-from-ui-commit
           client-payload: |
             {
-              "ref": "${{ github.sha }}",
+              "ref": "${{ github.sha }}"
             }
