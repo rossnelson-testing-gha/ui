@@ -24,27 +24,7 @@ jobs:
 
       - name: Validate version for release readiness
         id: version-check
-        run: |
-          # Use the validation script to check both sync and increase
-          if ./scripts/validate-versions.sh --quiet; then
-            echo "✅ Version validation passed"
-            VERSION_READY="true"
-          else
-            echo "❌ Version validation failed"
-            VERSION_READY="false"
-          fi
-
-          # Get version details for outputs (using Go version as source of truth)
-          CURRENT_VERSION=$(grep 'UIVersion.*=' server/server/version/version.go | sed 's/.*"\(.*\)".*/\1/')
-          PREVIOUS_VERSION=$(git show HEAD~1:server/server/version/version.go 2>/dev/null | grep 'UIVersion.*=' | sed 's/.*"\(.*\)".*/\1/' 2>/dev/null || echo "")
-
-          echo "Current version: $CURRENT_VERSION"
-          echo "Previous version: $PREVIOUS_VERSION"
-
-          # Set outputs
-          echo "version-ready=$VERSION_READY" >> $GITHUB_OUTPUT
-          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "previous-version=$PREVIOUS_VERSION" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/validate-release-readiness
 
   update_release_draft:
     needs: check_version_change
