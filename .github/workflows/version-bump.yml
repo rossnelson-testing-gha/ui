@@ -37,7 +37,8 @@ jobs:
     outputs:
       version-changed: ${{ steps.version-check.outputs.version-changed }}
       new-version: ${{ steps.calculate-version.outputs.new-version }}
-      pr-number: ${{ steps.create-pr.outputs.pr-number }}
+      pr-number: ${{ steps.create-pr.outputs.pull-request-number }}
+      pr-url: ${{ steps.create-pr.outputs.pull-request-url }}
 
     steps:
       - name: Checkout
@@ -200,70 +201,41 @@ jobs:
       - name: Create Pull Request
         if: inputs.mode != 'dry-run' && steps.version-check.outputs.version-changed == 'true'
         id: create-pr
-        run: |
-          NEW_VERSION="${{ steps.calculate-version.outputs.new-version }}"
-          BRANCH_NAME="version-bump-$NEW_VERSION"
-
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create and switch to new branch
-          git checkout -b "$BRANCH_NAME"
-
-          # Add changes
-          git add package.json server/server/version/version.go
-
-          # Check if there are changes to commit
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            echo "pr-number=" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Commit changes
-          git commit -m "chore: bump version to $NEW_VERSION
-
-          Auto-generated version bump from ${{ steps.validate-sync.outputs.current-version }} to $NEW_VERSION
-
-          Bump type: ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
-
-          Changes included:
-          ${{ steps.analyze-prs.outputs.changelog || 'Manual version bump' }}"
-
-          # Push branch
-          git push origin "$BRANCH_NAME"
-
-          # Create PR
-          PR_BODY="## 🚀 Version Bump to $NEW_VERSION
-
-          This PR updates the version from \`${{ steps.validate-sync.outputs.current-version }}\` to \`$NEW_VERSION\`.
-
-          ### 📋 Files Updated
-          - \`package.json\`
-          - \`server/server/version/version.go\`
-
-          ### 📝 Bump Details
-          - **Bump Type:** ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
-          - **Mode:** ${{ inputs.mode }}
-
-          ### 📖 Changes Since Last Version
-          ${{ steps.analyze-prs.outputs.changelog || 'Manual version bump - no automatic changelog generated' }}
-
-          ---
-          🤖 This PR was automatically created by the Version Bump workflow."
-
-          gh pr create \
-            --title "chore: bump version to $NEW_VERSION" \
-            --body "$PR_BODY" \
-            --head "$BRANCH_NAME" \
-            --base main
-
-          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number --jq '.number')
-          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "✅ Created PR #$PR_NUMBER"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore: bump version to ${{ steps.calculate-version.outputs.new-version }}
+            
+            Auto-generated version bump from ${{ steps.validate-sync.outputs.current-version }} to ${{ steps.calculate-version.outputs.new-version }}
+            
+            Bump type: ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
+            
+            Changes included:
+            ${{ steps.analyze-prs.outputs.changelog || 'Manual version bump' }}
+          title: "chore: bump version to ${{ steps.calculate-version.outputs.new-version }}"
+          body: |
+            ## 🚀 Version Bump to ${{ steps.calculate-version.outputs.new-version }}
+            
+            This PR updates the version from `${{ steps.validate-sync.outputs.current-version }}` to `${{ steps.calculate-version.outputs.new-version }}`.
+            
+            ### 📋 Files Updated
+            - `package.json`
+            - `server/server/version/version.go`
+            
+            ### 📝 Bump Details
+            - **Bump Type:** ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
+            - **Mode:** ${{ inputs.mode }}
+            
+            ### 📖 Changes Since Last Version
+            ${{ steps.analyze-prs.outputs.changelog || 'Manual version bump - no automatic changelog generated' }}
+            
+            ---
+            🤖 This PR was automatically created by the Version Bump workflow.
+          branch: version-bump-${{ steps.calculate-version.outputs.new-version }}
+          delete-branch: true
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 
       - name: Summary
         if: inputs.mode != 'dry-run'
@@ -272,11 +244,11 @@ jobs:
             echo "🎉 Version bump completed!"
             echo "- Old version: ${{ steps.validate-sync.outputs.current-version }}"
             echo "- New version: ${{ steps.calculate-version.outputs.new-version }}"
-            if [[ -n "${{ steps.create-pr.outputs.pr-number }}" ]]; then
-              echo "- Pull Request: #${{ steps.create-pr.outputs.pr-number }}"
+            if [[ -n "${{ steps.create-pr.outputs.pull-request-number }}" ]]; then
+              echo "- Pull Request: #${{ steps.create-pr.outputs.pull-request-number }}"
+              echo "- Pull Request URL: ${{ steps.create-pr.outputs.pull-request-url }}"
             fi
           else
             echo "ℹ️ No version change was needed."
           fi
-
 
