@@ -68,9 +68,10 @@ jobs:
       - name: Analyze merged PRs since last version
         id: analyze-prs
         if: inputs.mode == 'auto' || inputs.mode == 'dry-run'
-        uses: ./.github/actions/analyze-version-bump-type
+        uses: temporalio/pack-dependency-actions/analyze-commits-for-bump@main
         with:
-          last-tag: ${{ steps.last-tag.outputs.last-tag }}
+          from-ref: ${{ steps.last-tag.outputs.last-tag }}
+          to-ref: HEAD
       
       - name: Get HEAD SHA for changelog
         id: get-head-sha
@@ -89,12 +90,11 @@ jobs:
 
       - name: Calculate new version
         id: calculate-version
-        uses: ./.github/actions/calculate-version-bump
+        uses: temporalio/pack-dependency-actions/calculate-semantic-version@main
         with:
           current-version: ${{ steps.validate-sync.outputs.current-version }}
           bump-type: ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
           specific-version: ${{ inputs.specific_version }}
-          mode: ${{ inputs.mode }}
 
       - name: Dry run summary
         if: inputs.mode == 'dry-run'
