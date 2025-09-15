@@ -70,8 +70,14 @@ runs:
           echo "🔧 Found fixes/improvements → patch bump"
         fi
 
-        # Generate changelog
-        CHANGELOG=$(echo "$COMMITS" | sed 's/^[a-f0-9]* /- /' | head -20)
+        # Get repository URL for commit links
+        REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+        
+        # Generate changelog with commit links
+        CHANGELOG=$(echo "$COMMITS" | while IFS=' ' read -r hash message; do
+          short_hash="${hash:0:7}"
+          echo "- $message ([${short_hash}](${REPO_URL}/commit/${hash}))"
+        done | head -20)
 
         echo "📋 Changelog preview:"
         echo "$CHANGELOG" | head -5
