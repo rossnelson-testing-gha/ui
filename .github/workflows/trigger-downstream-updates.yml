@@ -23,15 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate token for cross-repo access
-        id: generate_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.TEMPORAL_CICD_APP_ID }}
-          private-key: ${{ secrets.TEMPORAL_CICD_PRIVATE_KEY }}
-          owner: temporalio
-          repositories: cloud-ui,ui,pack-dependency-actions
-
       - name: Prepare workflow inputs
         id: prepare
         run: |
@@ -56,7 +47,6 @@ jobs:
       - name: Trigger cloud-ui update
         uses: temporalio/pack-dependency-actions/dispatch-workflow@main
         with:
-          token: ${{ steps.generate_token.outputs.token }}
           repository: rossnelson-testing-gha/cloud-ui
           workflow: generate-ui-pr.yml
           ref: main
