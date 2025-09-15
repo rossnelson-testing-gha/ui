@@ -42,3 +42,4 @@ making another change. to test the ci pipeline
 # Test trigger Mon Sep 15 12:14:10 EDT 2025
 # Test comment fix Mon Sep 15 12:26:24 EDT 2025
 # Test printf fix Mon Sep 15 12:29:39 EDT 2025
+# Test heredoc fix Mon Sep 15 12:32:53 EDT 2025
