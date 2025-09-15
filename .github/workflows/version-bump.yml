@@ -117,7 +117,7 @@ jobs:
         with:
           app-id: ${{ secrets.TEMPORAL_CICD_APP_ID }}
           private-key: ${{ secrets.TEMPORAL_CICD_PRIVATE_KEY }}
-          owner: temporalio
+          owner: rossnelson-testing-gha
           repositories: ui
 
       - name: Create Pull Request
