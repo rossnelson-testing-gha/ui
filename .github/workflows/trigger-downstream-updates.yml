@@ -47,6 +47,7 @@ jobs:
       - name: Trigger cloud-ui update
         uses: temporalio/pack-dependency-actions/dispatch-workflow@main
         with:
+          token: ${{ github.token }}
           repository: rossnelson-testing-gha/cloud-ui
           workflow: generate-ui-pr.yml
           ref: main
