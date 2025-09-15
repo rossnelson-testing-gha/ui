@@ -68,7 +68,7 @@ jobs:
       - name: Analyze merged PRs since last version
         id: analyze-prs
         if: inputs.mode == 'auto' || inputs.mode == 'dry-run'
-        uses: temporalio/pack-dependency-actions/analyze-commits-for-bump@main
+        uses: temporalio/pack-dependency-actions/analyze-commits-for-bump@v1
         with:
           from-ref: ${{ steps.last-tag.outputs.last-tag }}
           to-ref: HEAD
@@ -81,7 +81,7 @@ jobs:
       - name: Generate changelog
         id: generate-changelog
         if: steps.last-tag.outputs.last-tag != ''
-        uses: temporalio/pack-dependency-actions/generate-changelog@main
+        uses: temporalio/pack-dependency-actions/generate-changelog@v1
         with:
           repository: ${{ github.repository }}
           from-sha: ${{ steps.last-tag.outputs.last-tag }}
@@ -90,7 +90,7 @@ jobs:
 
       - name: Calculate new version
         id: calculate-version
-        uses: temporalio/pack-dependency-actions/calculate-semantic-version@main
+        uses: temporalio/pack-dependency-actions/calculate-semantic-version@v1
         with:
           current-version: ${{ steps.validate-sync.outputs.current-version }}
           bump-type: ${{ inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type }}
