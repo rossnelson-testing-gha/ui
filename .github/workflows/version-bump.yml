@@ -72,14 +72,19 @@ jobs:
         with:
           last-tag: ${{ steps.last-tag.outputs.last-tag }}
       
+      - name: Get HEAD SHA for changelog
+        id: get-head-sha
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      
       - name: Generate changelog
         id: generate-changelog
-        if: (inputs.mode == 'auto' || inputs.mode == 'dry-run') && steps.analyze-prs.outputs.latest-sha != ''
+        if: steps.last-tag.outputs.last-tag != ''
         uses: temporalio/pack-dependency-actions/generate-changelog@main
         with:
           repository: ${{ github.repository }}
           from-sha: ${{ steps.last-tag.outputs.last-tag }}
-          to-sha: ${{ steps.analyze-prs.outputs.latest-sha }}
+          to-sha: ${{ steps.analyze-prs.outputs.latest-sha || steps.get-head-sha.outputs.sha }}
           format: markdown
 
       - name: Calculate new version
@@ -149,7 +154,8 @@ jobs:
 
             ${{ inputs.specific_version && format('Specific version: {0}', inputs.specific_version) || format('Bump type: {0}', inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type) }}
 
-            ${{ inputs.specific_version && 'Manual version override' || format('Changes included:\n{0}', steps.generate-changelog.outputs.changelog || 'Manual version bump') }}
+            Changes included:
+            ${{ steps.generate-changelog.outputs.changelog || 'No commits since last version' }}
           title: 'chore: bump version to ${{ steps.calculate-version.outputs.new-version }}'
           body: |
             ## 🚀 Version Bump to ${{ steps.calculate-version.outputs.new-version }}
@@ -164,8 +170,10 @@ jobs:
             ${{ inputs.specific_version && format('- **Version Source:** Specific version override\n- **Specified Version:** {0}', inputs.specific_version) || format('- **Bump Type:** {0}', inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type) }}
             - **Mode:** ${{ inputs.mode }}
 
-            ### ${{ inputs.specific_version && '📌 Manual Version Override' || '📖 Changes Since Last Version' }}
-            ${{ inputs.specific_version && 'This version was manually specified rather than calculated from commit history.' || steps.generate-changelog.outputs.changelog || 'Manual version bump - no automatic changelog generated' }}
+            ### 📖 Changes Since Last Version
+            ${{ steps.generate-changelog.outputs.changelog || 'No commits found since last version' }}
+            
+            ${{ inputs.specific_version && '**Note:** This version was manually specified rather than calculated from commit history.' || '' }}
 
             ---
             🤖 This PR was automatically created by the Version Bump workflow.
