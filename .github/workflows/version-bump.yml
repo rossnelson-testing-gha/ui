@@ -71,6 +71,16 @@ jobs:
         uses: ./.github/actions/analyze-version-bump-type
         with:
           last-tag: ${{ steps.last-tag.outputs.last-tag }}
+      
+      - name: Generate changelog
+        id: generate-changelog
+        if: (inputs.mode == 'auto' || inputs.mode == 'dry-run') && steps.analyze-prs.outputs.latest-sha != ''
+        uses: temporalio/pack-dependency-actions/generate-changelog@main
+        with:
+          repository: ${{ github.repository }}
+          from-sha: ${{ steps.last-tag.outputs.last-tag }}
+          to-sha: ${{ steps.analyze-prs.outputs.latest-sha }}
+          format: markdown
 
       - name: Calculate new version
         id: calculate-version
@@ -97,9 +107,9 @@ jobs:
           fi
           echo "**Version Changed:** ${{ steps.calculate-version.outputs.version-changed }}"
           echo ""
-          if [[ -z "${{ inputs.specific_version }}" ]]; then
+          if [[ -n "${{ steps.generate-changelog.outputs.changelog }}" ]]; then
             echo "### 📝 Changes Since Last Version"
-            echo "${{ steps.analyze-prs.outputs.changelog }}"
+            echo "${{ steps.generate-changelog.outputs.changelog }}"
             echo ""
           fi
           echo "**Note:** This was a dry run. No files were modified."
@@ -139,7 +149,7 @@ jobs:
 
             ${{ inputs.specific_version && format('Specific version: {0}', inputs.specific_version) || format('Bump type: {0}', inputs.mode == 'manual' && inputs.version_type || steps.analyze-prs.outputs.bump-type) }}
 
-            ${{ inputs.specific_version && 'Manual version override' || format('Changes included:\n{0}', steps.analyze-prs.outputs.changelog || 'Manual version bump') }}
+            ${{ inputs.specific_version && 'Manual version override' || format('Changes included:\n{0}', steps.generate-changelog.outputs.changelog || 'Manual version bump') }}
           title: 'chore: bump version to ${{ steps.calculate-version.outputs.new-version }}'
           body: |
             ## 🚀 Version Bump to ${{ steps.calculate-version.outputs.new-version }}
@@ -155,7 +165,7 @@ jobs:
             - **Mode:** ${{ inputs.mode }}
 
             ### ${{ inputs.specific_version && '📌 Manual Version Override' || '📖 Changes Since Last Version' }}
-            ${{ inputs.specific_version && 'This version was manually specified rather than calculated from commit history.' || steps.analyze-prs.outputs.changelog || 'Manual version bump - no automatic changelog generated' }}
+            ${{ inputs.specific_version && 'This version was manually specified rather than calculated from commit history.' || steps.generate-changelog.outputs.changelog || 'Manual version bump - no automatic changelog generated' }}
 
             ---
             🤖 This PR was automatically created by the Version Bump workflow.

@@ -12,12 +12,12 @@ outputs:
   bump-type:
     description: 'Determined bump type (major, minor, patch)'
     value: ${{ steps.analyze.outputs.bump-type }}
-  changelog:
-    description: 'Formatted changelog of commits'
-    value: ${{ steps.analyze.outputs.changelog }}
   commit-count:
     description: 'Number of commits analyzed'
     value: ${{ steps.analyze.outputs.commit-count }}
+  latest-sha:
+    description: 'Latest commit SHA in the range'
+    value: ${{ steps.analyze.outputs.latest-sha }}
 
 runs:
   using: 'composite'
@@ -70,28 +70,14 @@ runs:
           echo "🔧 Found fixes/improvements → patch bump"
         fi
 
-        # Get repository URL for commit links
-        REPO_URL="${{ github.server_url }}/${{ github.repository }}"
-        
-        # Generate changelog with commit links
-        CHANGELOG=$(echo "$COMMITS" | while IFS=' ' read -r hash message; do
-          short_hash="${hash:0:7}"
-          echo "- $message ([${short_hash}](${REPO_URL}/commit/${hash}))"
-        done | head -20)
-
-        echo "📋 Changelog preview:"
-        echo "$CHANGELOG" | head -5
-        if [[ $COMMIT_COUNT -gt 5 ]]; then
-          echo "... and $((COMMIT_COUNT - 5)) more commits"
-        fi
-
-        # Set outputs
+        # Set outputs for bump type and commit count
         echo "bump-type=$BUMP_TYPE" >> $GITHUB_OUTPUT
         echo "commit-count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
-
-        # Use heredoc for multiline changelog
-        {
-          echo "changelog<<CHANGELOG_EOF"
-          echo "$CHANGELOG"
-          echo "CHANGELOG_EOF"
-        } >> $GITHUB_OUTPUT
+        
+        # Get the latest commit SHA from the list
+        LATEST_SHA=$(echo "$COMMITS" | head -1 | awk '{print $1}')
+        echo "latest-sha=$LATEST_SHA" >> $GITHUB_OUTPUT
+        
+        # Preview info
+        echo "📋 Commit count: $COMMIT_COUNT"
+        echo "🔄 Latest SHA: $LATEST_SHA"
